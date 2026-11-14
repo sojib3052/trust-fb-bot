@@ -1,87 +1,113 @@
 import asyncio
 import logging
+import sys
 from aiogram import Bot, Dispatcher, F, types
 from aiogram.filters import Command
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiohttp import web  # রেন্ডারের টাইমআউট রোধ করার জন্য
 
-# আপনার দেওয়া টোকেন এখানে বসানো হলো
+# আপনার টেলিগ্রাম বট টোকেন
 TOKEN = "8999014754:AAGyxpUaUn0A_14sNW0M3NOV8giTUkI-NvQ"
+
+# আপনার পেমেন্ট নম্বর ও বাইনান্স আইডি
+BKASH_NO = "01835328849"
+NAGAD_NO = "01785283052"
+ROCKET_NO = "01785283052"
+BINANCE_ID = "902145970"
+
+# আপনার টেলিগ্রাম সাপোর্ট ইউজারনেম
+SUPPORT_USERNAME = "Hmsojib52"
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# ১. বটের মূল মেনু (নিচের বাটনগুলো)
-main_menu_keyboard = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton(text="🛍 শপ"), KeyboardButton(text="💳 ডিপোজিট")],
-        [KeyboardButton(text="👤 ব্যালেন্স"), KeyboardButton(text="📦 আমার অর্ডার")],
-        [KeyboardButton(text="🎧 সাপোর্ট"), KeyboardButton(text="🎁 রেফার")]
-    ],
-    resize_keyboard=True
-)
-
-# ২. /start কমান্ড দিলে বট যা উত্তর দিবে
-@dp.message(Command("start"))
-async def send_welcome(message: types.Message):
-    user_name = message.from_user.first_name
-    welcome_text = (
-        f"✨ হ্যালো {user_name}!\n\n"
-        f"স্বাগতম **Trust FB**-এ! নিচের মেনু থেকে অপশন বেছে নিন।"
-    )
-    await message.answer(welcome_text, parse_mode="Markdown", reply_markup=main_menu_keyboard)
-
-# ৩. '🛍 শপ' বাটনে ক্লিক করলে প্রোডাক্ট ক্যাটাগরি দেখাবে
-@dp.message(F.text == "🛍 শপ")
-async def shop_menu(message: types.Message):
-    shop_inline_kb = InlineKeyboardMarkup(
+# ১. মূল মেনু
+def get_main_menu():
+    keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="🛍 Fb 0 friend cookies id (৳৭)", callback_data="buy_cookie_id")],
-            [InlineKeyboardButton(text="📱 Mob Reg Facebook ID (৳১৫)", callback_data="buy_mob_id")]
+            [InlineKeyboardButton(text="📦 পণ্যের তালিকা ও দাম", callback_data="shop_products")],
+            [InlineKeyboardButton(text="💳 পেমেন্ট মাধ্যম (বিকাশ/নগদ/বাইনান্স)", callback_data="shop_payments")],
+            [InlineKeyboardButton(text="📞 সাপোর্টে যোগাযোগ", url=f"https://t.me/{SUPPORT_USERNAME}")],
         ]
     )
-    await message.answer(
-        "🛍 **প্রোডাক্ট লিস্ট**\n\nএকটি প্রোডাক্ট বেছে নিন 👇",
-        parse_mode="Markdown",
-        reply_markup=shop_inline_kb
+    return keyboard
+
+# ২. /start কমান্ড হ্যান্ডলার
+@dp.message(Command("start"))
+async def cmd_start(message: types.Message):
+    welcome_text = (
+        "👋 স্বাগতম **Trust FB** শপে!\n\n"
+        "নিরাপদ ও আস্থার সাথে সোশ্যাল মিডিয়া অ্যাকাউন্ট কিনতে নিচের অপশনগুলো থেকে বেছে নিন:"
     )
+    await message.answer(welcome_text, reply_markup=get_main_menu(), parse_mode="Markdown")
 
-# ৪. কোনো প্রোডাক্টে ক্লিক করলে কী মেসেজ দেখাবে
-@dp.callback_query(F.data == "buy_cookie_id")
-async def process_purchase_cookie(callback: types.CallbackQuery):
-    await callback.message.answer("🛒 আপনার অর্ডারটি প্রসেস করা হচ্ছে...\n(টাকা বা ব্যালেন্স সিস্টেম যুক্ত করার পর এখানে অটো ডেলিভারি হবে)")
+# ৩. পণ্যের তালিকা প্রদর্শন
+@dp.callback_query(F.data == "shop_products")
+async def show_products(callback: types.CallbackQuery):
+    text = (
+        "🛍️ **আমাদের বর্তমান পণ্যের তালিকা:**\n\n"
+        "🔹 **New Number Cookies ID**\n"
+        "   - বিবরণ: ফ্রেশ এবং ট্রাস্টেড নাম্বার কুকিজ আইডি।\n"
+        "   - অর্ডার করতে বা দাম জানতে সরাসরি সাপোর্টে যোগাযোগ করুন।\n\n"
+        "পছন্দের পণ্যটি নিতে নিচের বাটনে ক্লিক করুন:"
+    )
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="🛒 অর্ডার করতে যোগাযোগ করুন", url=f"https://t.me/{SUPPORT_USERNAME}")],
+            [InlineKeyboardButton(text="⬅️ ফিরে যান", callback_data="back_home")]
+        ]
+    )
+    await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="Markdown")
     await callback.answer()
 
-@dp.callback_query(F.data == "buy_mob_id")
-async def process_purchase_mob(callback: types.CallbackQuery):
-    await callback.message.answer("🛒 আপনার অর্ডারটি প্রসেস করা হচ্ছে...")
+# ৪. পেমেন্ট নম্বর ও বাইনান্স আইডি প্রদর্শন
+@dp.callback_query(F.data == "shop_payments")
+async def show_payments(callback: types.CallbackQuery):
+    payment_text = (
+        "💳 **আমাদের পেমেন্ট মাধ্যম (Personal Numbers & Binance):**\n\n"
+        f"🔹 **বিকাশ (Bkash Personal):** `{BKASH_NO}`\n"
+        f"🔹 **নগদ (Nagad Personal):** `{NAGAD_NO}`\n"
+        f"🔹 **রকেট (Rocket Personal):** `{ROCKET_NO}`\n"
+        f"🔹 **বাইনান্স আইডি (Binance ID):** `{BINANCE_ID}`\n\n"
+        "⚠️ টাকা পাঠানোর পর অবশ্যই ট্রানজাকশন আইডি (TrxID) বা পেমেন্টের স্ক্রিনশটসহ সাপোর্টে মেসেজ দিন।"
+    )
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="💬 পেমেন্ট করে সাপোর্টে মেসেজ দিন", url=f"https://t.me/{SUPPORT_USERNAME}")],
+            [InlineKeyboardButton(text="⬅️ মূল মেনুতে ফিরে যান", callback_data="back_home")]
+        ]
+    )
+    await callback.message.edit_text(payment_text, reply_markup=keyboard, parse_mode="Markdown")
     await callback.answer()
 
-# ৫. অন্যান্য মেইন মেনু বাটনের সাধারণ রিপ্লাই
-@dp.message(F.text == "👤 ব্যালেন্স")
-async def check_balance(message: types.Message):
-    await message.answer("👤 আপনার বর্তমান ব্যালেন্স: ৳০.০০\n\nটাকা যোগ করতে '💳 ডিপোজিট' এ ক্লিক করুন।")
+# ৫. হোম মেনুতে ফেরার হ্যান্ডলার
+@dp.callback_query(F.data == "back_home")
+async def back_to_home(callback: types.CallbackQuery):
+    welcome_text = (
+        "👋 স্বাগতম **Trust FB** শপে!\n\n"
+        "নিরাপদ ও আস্থার সাথে সোশ্যাল মিডিয়া অ্যাকাউন্ট কিনতে নিচের অপশনগুলো থেকে বেছে নিন:"
+    )
+    await callback.message.edit_text(welcome_text, reply_markup=get_main_menu(), parse_mode="Markdown")
+    await callback.answer()
 
-@dp.message(F.text == "💳 ডিপোজিট")
-async def deposit_money(message: types.Message):
-    await message.answer("💳 ডিপোজিট করতে নিচের নাম্বারে Send Money করুন:\n\nবিকাশ/নগদ: `01XXXXXXXXX`\n\nটাকা পাঠিয়ে ট্রানজেকশন আইডি (TrxID) এখানে পাঠান।", parse_mode="Markdown")
+# ৬. ডামি ওয়েব সার্ভার (রেন্ডার টাইমআউট ঠেকানোর জন্য)
+async def handle(request):
+    return web.Response(text="Trust FB Bot is running!")
 
-@dp.message(F.text == "📦 আমার অর্ডার")
-async def my_orders(message: types.Message):
-    await message.answer("📦 আপনার কোনো পূর্ববর্তী অর্ডার নেই।")
+async def web_server():
+    app = web.Application()
+    app.router.add_get("/", handle)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", 10000)
+    await site.start()
 
-@dp.message(F.text == "🎧 সাপোর্ট")
-async def support_info(message: types.Message):
-    await message.answer("🎧 কোনো সমস্যা হলে আমাদের এডমিনকে নক করুন: @YourUsername")
-
-@dp.message(F.text == "🎁 রেফার")
-async def referral_info(message: types.Message):
-    await message.answer("🎁 আপনার রেফারেল লিংক:\nhttps://t.me/TrustFB_shop_bot?start=ref12345")
-
-# ৬. বট চালু করার মেইন ফাংশন
+# ৭. মূল রান ফাংশন
 async def main():
-    logging.basicConfig(level=logging.INFO)
-    print("Trust FB বট সফলভাবে চালু হয়েছে...")
-    await dp.start_polling(bot)
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    # ওয়েব সার্ভার এবং টেলিগ্রাম পুলিং একসাথে রান করবে
+    await asyncio.gather(web_server(), dp.start_polling(bot))
 
 if __name__ == "__main__":
     asyncio.run(main())
+    
