@@ -185,9 +185,9 @@ async def show_payments_bn(callback: types.CallbackQuery):
     await callback.message.edit_text(payment_text, reply_markup=keyboard, parse_mode="Markdown")
     await callback.answer()
 
-# ৮. রেন্ডারের জন্য সিম্পল aiohttp ওয়েব সার্ভার
+# ৮. রেন্ডারের জন্য ওয়েব সার্ভার
 async def handle(request):
-    return web.Response(text="Bot is running!")
+    return web.Response(text="Trust FB Bot is running successfully!")
 
 async def start_web_server():
     app = web.Application()
@@ -202,12 +202,8 @@ async def start_web_server():
 # ৯. মূল এন্ট্রি পয়েন্ট
 async def main():
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-    
-    # প্রথমে ওয়েব সার্ভার ব্যাকগ্রাউন্ডে চালু করা যাতে রেন্ডার পোর্ট ইনস্ট্যান্ট পেয়ে যায়
     await start_web_server()
-    
-    print("Trust FB বট পোলিং শুরু হচ্ছে...")
-    # এরপর টেলিগ্রাম বট পোলিং রান করা
+    print("Trust FB শপ বট সফলভাবে চালু হয়েছে...")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
