@@ -7,22 +7,17 @@ from aiogram.filters import Command
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiohttp import web
 
-# আপনার টেলিগ্রাম বট টোকেন
 TOKEN = "8999014754:AAGyxpUaUn0A_14sNW0M3NOV8giTUkI-NvQ"
 
-# আপনার পেমেন্ট ও যোগাযোগের নম্বর
 BKASH_NO = "01835328849"
 NAGAD_NO = "01785283052"
 ROCKET_NO = "01785283052"
 WHATSAPP_NO = "01785283052"
-
-# আপনার টেলিগ্রাম সাপোর্ট ইউজারনেম
 SUPPORT_USERNAME = "Hmsojib52"
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# ১. মূল শপ ইন্টারফেস (Clean & Minimalist Design)
 def get_main_menu():
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
@@ -34,7 +29,6 @@ def get_main_menu():
     )
     return keyboard
 
-# ২. /start কমান্ড হ্যান্ডলার
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     text = (
@@ -44,7 +38,6 @@ async def cmd_start(message: types.Message):
     )
     await message.answer(text, reply_markup=get_main_menu(), parse_mode="Markdown")
 
-# ৩. পণ্য কেনার বিবরণ ও অর্ডার নির্দেশিকা
 @dp.callback_query(F.data == "buy_cookies")
 async def show_product_details(callback: types.CallbackQuery):
     text = (
@@ -53,7 +46,7 @@ async def show_product_details(callback: types.CallbackQuery):
         "🔹 **Price:** `8 BDT` per ID\n"
         "🔹 **Format:** `UID | Password | Cookies`\n\n"
         "🛒 **অর্ডার করার নিয়ম:**\n"
-        "প্রথমে নিচের পেমেন্ট মাধ্যম থেকে টাকা পাঠিয়ে ট্রানজাকশন আইডি (TrxID) সহ সরাসরি আমাদের সাপোর্টে মেসেজ দিন। সাথে সাথে আইডি পেয়ে যাবেন!"
+        "প্রথমে নিচের পেমেন্ট মাধ্যম থেকে টাকা পাঠিয়ে ট্রানজাকশন আইডি (TrxID) সহ সরাসরি আমাদের সাপোর্টে মেসেজ দিন।"
     )
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
@@ -66,7 +59,6 @@ async def show_product_details(callback: types.CallbackQuery):
     await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="Markdown")
     await callback.answer()
 
-# ৪. পেমেন্ট মাধ্যম
 @dp.callback_query(F.data == "payment_info")
 async def show_payments(callback: types.CallbackQuery):
     text = (
@@ -74,11 +66,44 @@ async def show_payments(callback: types.CallbackQuery):
         f"🔹 **Bkash:** `{BKASH_NO}`\n"
         f"🔹 **Nagad:** `{NAGAD_NO}`\n"
         f"🔹 **Rocket:** `{ROCKET_NO}`\n\n"
-        "🟡 **Binance:** ডলার বা বাইনান্সের মাধ্যমে পেমেন্ট করতে চাইলে সরাসরি সাপোর্টে যোগাযোগ করুন।\n\n"
-        "⚠️ টাকা পাঠানোর পর স্ক্রিনশট বা TrxID দিয়ে সাপোর্টে নক দিন।"
+        "🟡 **Binance:** ডলার বা বাইনান্সের মাধ্যমে পেমেন্ট করতে চাইলে সরাসরি সাপোর্টে যোগাযোগ করুন।"
     )
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="💬 Contact Support", url=f"https://t.me/{SUPPORT_USERNAME}")],
-            [InlineKeyboardButton(text="⬅️ Back to Home", callback_data="back_home
+            [InlineKeyboardButton(text="⬅️ Back to Home", callback_data="back_home")]
+        ]
+    )
+    await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="Markdown")
+    await callback.answer()
+
+@dp.callback_query(F.data == "back_home")
+async def back_to_home(callback: types.CallbackQuery):
+    text = (
+        "🔥 **Welcome to Trust FB Shop** 🔥\n\n"
+        "আস্থার সাথে ফ্রেশ নাম্বার কুকিজ আইডি কিনতে নিচের অপশনগুলো ব্যবহার করুন:\n\n"
+        "👇 আপনার পছন্দের অপশনে ক্লিক করুন:"
+    )
+    await callback.message.edit_text(text, reply_markup=get_main_menu(), parse_mode="Markdown")
+    await callback.answer()
+
+async def handle(request):
+    return web.Response(text="Bot is running!")
+
+async def start_web_server():
+    app = web.Application()
+    app.router.add_get("/", handle)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    port = int(os.environ.get("PORT", 10000))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+
+async def main():
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    await start_web_server()
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    asyncio.run(main())
     
