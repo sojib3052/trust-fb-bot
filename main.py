@@ -185,31 +185,31 @@ async def show_payments_bn(callback: types.CallbackQuery):
     await callback.message.edit_text(payment_text, reply_markup=keyboard, parse_mode="Markdown")
     await callback.answer()
 
-# ৮. ওয়েব সার্ভার (রেন্ডার পোর্ট হ্যান্ডলিং)
+# ৮. রেন্ডারের জন্য সিম্পল aiohttp ওয়েব সার্ভার
 async def handle(request):
-    return web.Response(text="Trust FB Bot is running successfully!")
+    return web.Response(text="Bot is running!")
 
-async def web_server():
+async def start_web_server():
     app = web.Application()
     app.router.add_get("/", handle)
     runner = web.AppRunner(app)
     await runner.setup()
-    
-    # রেন্ডারের পরিবেশ থেকে পোর্ট রিড করা (ডিফল্ট ১০০০০)
     port = int(os.environ.get("PORT", 10000))
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
-    logging.info(f"Web server started on port {port}")
+    print(f"Web server started on port {port}")
 
-# ৯. মূল রান ফাংশন
+# ৯. মূল এন্ট্রি পয়েন্ট
 async def main():
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-    print("Trust FB বট সফলভাবে চালু হয়েছে...")
-    await asyncio.gather(web_server(), dp.start_polling(bot))
+    
+    # প্রথমে ওয়েব সার্ভার ব্যাকগ্রাউন্ডে চালু করা যাতে রেন্ডার পোর্ট ইনস্ট্যান্ট পেয়ে যায়
+    await start_web_server()
+    
+    print("Trust FB বট পোলিং শুরু হচ্ছে...")
+    # এরপর টেলিগ্রাম বট পোলিং রান করা
+    await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except Exception as e:
-        logging.error(f"Error occurred: {e}")
-        
+    asyncio.run(main())
+    
